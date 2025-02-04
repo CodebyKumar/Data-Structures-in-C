@@ -1,127 +1,117 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct node {
-    int info;
-    struct node *lchild, *rchild;
-} NODE;
+// Define a structure for a BST node using typedef
+typedef struct Node {
+    int data;
+    struct Node *left, *right;
+} Node;
 
-NODE *insert(NODE *root, int data) {
-    NODE *newnode, *temp, *parent;
-    newnode = (NODE *)malloc(sizeof(NODE));
-    newnode->lchild = newnode->rchild = NULL;
-    newnode->info = data;
-    if (root == NULL) {
-        root = newnode;
-    } else {
-        temp = root;
-        while (temp != NULL) {
-            parent = temp;
-            if (data > temp->info) {
-                temp = temp->rchild;
-            } else if (data < temp->info) {
-                temp = temp->lchild;
-            } else {
-                printf("\nData %d is already existing in the BST", data);
-                return root;
-            }
-        }
-        if (data > parent->info) {
-            parent->rchild = newnode;
-        } else {
-            parent->lchild = newnode;
-        }
-    }
-    printf("\n%d is inserted into BST", data);
+// Function to create a new node
+Node* createNode(int value) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->data = value;
+    newNode->left = newNode->right = NULL;
+    return newNode;
+}
+
+// Function to insert a node into BST
+Node* insert(Node* root, int value) {
+    if (root == NULL) return createNode(value);
+    
+    if (value < root->data)
+        root->left = insert(root->left, value);
+    else if (value > root->data)
+        root->right = insert(root->right, value);
+    
     return root;
 }
 
-void inorder(NODE *root) {
-    if (root == NULL) {
-        return;
-    }
-    inorder(root->lchild);
-    printf("%d ", root->info);
-    inorder(root->rchild);
-}
-
-NODE *del_key(NODE *root, int key) {
-    NODE *cur, *q, *parent, *successor;
-    parent = NULL;
-    cur = root;
-    while (cur != NULL) {
-        if (cur->info == key) {
-            break;
-        }
-        parent = cur;
-        cur = (key < cur->info) ? cur->lchild : cur->rchild;
-    }
-    if (cur == NULL) {
-        printf("\nKey %d is not found", key);
+// Function to search for a node in BST
+Node* search(Node* root, int key) {
+    if (root == NULL || root->data == key)
         return root;
-    }
-    if (cur->lchild == NULL) {
-        q = cur->rchild;
-    } else if (cur->rchild == NULL) {
-        q = cur->lchild;
-    } else {
-        successor = cur->rchild;
-        while (successor->lchild != NULL) {
-            successor = successor->lchild;
+    
+    if (key < root->data)
+        return search(root->left, key);
+    
+    return search(root->right, key);
+}
+
+// Function to find the minimum value node
+Node* minValueNode(Node* node) {
+    while (node->left != NULL)
+        node = node->left;
+    return node;
+}
+
+// **Simplified Delete Function**
+Node* deleteNode(Node* root, int key) {
+    if (root == NULL) return NULL;
+
+    if (key < root->data)
+        root->left = deleteNode(root->left, key);
+    else if (key > root->data)
+        root->right = deleteNode(root->right, key);
+    else {
+        // Case 1: No child or only one child
+        if (root->left == NULL) {
+            Node* temp = root->right;
+            free(root);
+            return temp;
         }
-        successor->lchild = cur->lchild;
-        q = cur->rchild;
+        if (root->right == NULL) {
+            Node* temp = root->left;
+            free(root);
+            return temp;
+        }
+
+        // Case 2: Two children -> Replace with inorder successor
+        Node* temp = minValueNode(root->right);
+        root->data = temp->data;
+        root->right = deleteNode(root->right, temp->data);
     }
-    if (parent == NULL) {
-        printf("\n%d is deleted from BST", key);
-        free(cur);
-        return q;
-    }
-    if (cur == parent->lchild) {
-        parent->lchild = q;
-    } else {
-        parent->rchild = q;
-    }
-    printf("\n%d is deleted from BST", key);
-    free(cur);
     return root;
 }
 
-int main() {
-    int choice, data, key;
-    NODE *root = NULL;
-    while (1) {
-        printf("\n1:Insert 2:Inorder 3:Delete 4:Exit");
-        printf("\nEnter your choice: ");
-        scanf("%d", &choice);
-        switch (choice) {
-            case 1:
-                printf("\nEnter data to be inserted: ");
-                scanf("%d", &data);
-                root = insert(root, data);
-                break;
-            case 2:
-                if (root == NULL) {
-                    printf("\nEmpty Tree");
-                } else {
-                    printf("\nInorder Traversal: ");
-                    inorder(root);
-                }
-                break;
-            case 3:
-                if (root == NULL) {
-                    printf("\nEmpty Tree");
-                } else {
-                    printf("\nEnter the key to delete: ");
-                    scanf("%d", &key);
-                    root = del_key(root, key);
-                }
-                break;
-            case 4:
-                exit(0);
-            default:
-                printf("\nInvalid choice");
-        }
+// Function for inorder traversal (sorted order)
+void inorder(Node* root) {
+    if (root != NULL) {
+        inorder(root->left);
+        printf("%d ", root->data);
+        inorder(root->right);
     }
+}
+
+// Driver code
+int main() {
+    Node* root = NULL;
+    
+    // Insert nodes
+    root = insert(root, 50);
+    root = insert(root, 30);
+    root = insert(root, 70);
+    root = insert(root, 20);
+    root = insert(root, 40);
+    root = insert(root, 60);
+    root = insert(root, 80);
+
+    printf("Inorder traversal of BST: ");
+    inorder(root);
+    printf("\n");
+
+    // Search for a key
+    int key = 40;
+    if (search(root, key))
+        printf("%d found in BST\n", key);
+    else
+        printf("%d not found in BST\n", key);
+
+    // Delete a node
+    root = deleteNode(root, 30);
+    printf("Inorder traversal after deleting 30: ");
+    inorder(root);
+    printf("\n");
+
     return 0;
 }
